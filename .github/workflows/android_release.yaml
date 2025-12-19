@@ -64,7 +64,7 @@ jobs:
           export ANDROID_SDK_ROOT="$GITHUB_WORKSPACE/Android"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           NINJA_STATUS="[%e sec | %f/%t %u remaining | %c/sec | j%r] "
-          ninja -C out/android-arm_gold cobalt_install
+          ninja -j $(nproc) -C out/android-arm_gold cobalt_install
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
