@@ -9,13 +9,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Cache Gradle
+      - name: Setup ccache
+        run: |
+          sudo apt install -y ccache
+          ccache --max-size=8G
+          ccache --set-config=compression=true
+          ccache --set-config=compression_level=6
+          ccache --show-stats
+      - name: Cache ccache
         uses: actions/cache@v3
         with:
-          key: gradle-cache-${{ hashFiles('starboard/android/apk/**/*gradle*') }}
-          path: |
-            /root/.gradle/caches
-            /root/.gradle/wrapper
+          path: ~/.ccache
+          key: ccache-android-arm-${{ hashFiles('**/*.gn', '**/*.gni') }}
+          restore-keys: |
+            ccache-android-arm-
       - name: Set Android env vars
         run: |
           # Unset ANDROID_SDK_ROOT to avoid SDK conflicts
@@ -45,9 +52,8 @@ jobs:
           sudo apt update && sudo apt install -qqy --no-install-recommends \
             bison clang libasound2-dev libgles2-mesa-dev libglib2.0-dev \
             libxcomposite-dev libxi-dev libxrender-dev nasm ninja-build \
-            python3-venv ccache gcc-multilib \
+            python3-venv gcc-multilib \
             g++-multilib libc6-dev-i386
-          ccache --max-size=20G
           bash ./starboard/tools/download_clang.sh
           bash ./starboard/android/shared/download_sdk.sh
       - name: Ensure Android debug keystore exists
@@ -64,7 +70,10 @@ jobs:
           export ANDROID_SDK_ROOT="$GITHUB_WORKSPACE/Android"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           NINJA_STATUS="[%e sec | %f/%t %u remaining | %c/sec | j%r] "
-          ninja -j $(nproc) -C out/android-arm_gold cobalt_install
+          export CC="ccache clang"
+          export CXX="ccache clang++"
+          export CCACHE_DIR="$HOME/.ccache"
+          ninja -j 2 -C out/android-arm_gold cobalt_install
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
