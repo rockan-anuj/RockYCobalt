@@ -1,4 +1,4 @@
-name: android_arm_build_manual
+name: android_arm_manual
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Cache Gradle
@@ -16,69 +16,66 @@ jobs:
         with:
           key: gradle-cache-${{ hashFiles('starboard/android/apk/**/*gradle*') }}
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+            /root/.gradle/caches
+            /root/.gradle/wrapper
 
-      - name: Install build dependencies
+      # EXACTLY as original (minus gcloud)
+      - name: Set Android env vars
         run: |
-          sudo apt update
-          sudo apt install -y --no-install-recommends \
-            bison clang libasound2-dev libgles2-mesa-dev libglib2.0-dev \
-            libxcomposite-dev libxi-dev libxrender-dev nasm ninja-build \
-            python3-venv ccache gcc-multilib g++-multilib libc6-dev-i386 \
-            unzip wget openjdk-17-jdk
+          export ANDROID_HOME="$GITHUB_WORKSPACE/Android"
+          mkdir -p "$ANDROID_HOME"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          unset ANDROID_SDK_ROOT
+          echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
 
-          ccache --max-size=20G
-
+      # EXACTLY as original
       - name: Install GN
         run: |
           wget https://chrome-infra-packages.appspot.com/dl/gn/gn/linux-amd64/+/latest -O gn.zip
-          unzip gn.zip
-          sudo mv gn /usr/local/bin/gn
+          unzip gn.zip -d gn_bin
+          sudo mv gn_bin/gn /usr/local/bin/gn
           sudo chmod +x /usr/local/bin/gn
 
-      - name: Set Android environment
-        run: |
-          echo "ANDROID_HOME=$GITHUB_WORKSPACE/Android" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
-          mkdir -p "$GITHUB_WORKSPACE/Android"
+      # REQUIRED by Starboard — EXACTLY as original
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE:$PYTHONPATH" >> $GITHUB_ENV
 
-      - name: Download toolchains
+      # EXACTLY same deps as original
+      - name: Install build dependencies
         run: |
+          sudo apt update && sudo apt install -qqy --no-install-recommends \
+            bison clang libasound2-dev libgles2-mesa-dev libglib2.0-dev \
+            libxcomposite-dev libxi-dev libxrender-dev nasm ninja-build \
+            python3-venv ccache gcc-multilib \
+            g++-multilib libc6-dev-i386
+          ccache --max-size=20G
           bash ./starboard/tools/download_clang.sh
           bash ./starboard/android/shared/download_sdk.sh
 
-      - name: Ensure Android debug keystore
+      # EXACTLY as original
+      - name: Ensure Android debug keystore exists
         run: |
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             mkdir -p "$HOME/.android"
-            keytool -genkey -v \
-              -keystore "$HOME/.android/debug.keystore" \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
+            keytool -genkey -v -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
               -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      - name: Generate build files (GN)
+      # ONLY CHANGE: arm build (no arm64)
+      - name: GN
         run: |
-          gn gen out/android-arm_gold --args='
-            target_platform="android-arm"
-            target_os="android"
-            target_cpu="arm"
-            build_type="gold"
-            sb_api_version=15
-          '
+          gn gen out/android-arm_gold --args='target_platform="android-arm" target_os="android" target_cpu="arm" build_type="gold" sb_api_version=15'
           gn check out/android-arm_gold
 
-      - name: Build Cobalt (ARM)
+      # EXACTLY as original
+      - name: Build Cobalt
         run: |
-          NINJA_STATUS="[%e sec | %f/%t | %c/sec | j%r] "
+          NINJA_STATUS="[%e sec | %f/%t %u remaining | %c/sec | j%r] "
           ninja -C out/android-arm_gold cobalt_install
 
+      # Artifact upload (NOT release)
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
