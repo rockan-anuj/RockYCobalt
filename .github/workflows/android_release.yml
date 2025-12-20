@@ -1,4 +1,4 @@
-name: android_arm_manual
+name: android_arm_manual_rocktube
 
 on:
   workflow_dispatch:
