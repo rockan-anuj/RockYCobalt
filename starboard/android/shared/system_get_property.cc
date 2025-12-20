@@ -30,7 +30,7 @@ using starboard::android::shared::ScopedLocalJavaRef;
 
 namespace {
 
-const char kFriendlyName[] = "Android";
+const char kFriendlyName[] = "RockTube";
 const char kUnknownValue[] = "unknown";
 
 // This is a format string template and the %s is meant to be replaced by

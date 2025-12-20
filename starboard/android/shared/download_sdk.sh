@@ -42,6 +42,10 @@ cd "${CURRENT_WORKING_DIRECTORY}"
 
 echo "Updating the SDK..."
 
+# Accept all SDK licenses non-interactively
+yes | ${SDK_MANAGER_TOOL} --sdk_root=${ANDROID_SDK_ROOT} --update || true
+yes | ${SDK_MANAGER_TOOL} --sdk_root=${ANDROID_SDK_ROOT} --licenses || true
+
 # Update the installation
 ${SDK_MANAGER_TOOL} --sdk_root=${ANDROID_SDK_ROOT} \
     "build-tools;31.0.0" \

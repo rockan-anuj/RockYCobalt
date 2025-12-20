@@ -52,3 +52,5 @@ cobalt_font_package = "android_system"
 separate_install_targets_for_bundling = true
 
 v8_enable_webassembly = true
+
+enable_in_app_dial = true

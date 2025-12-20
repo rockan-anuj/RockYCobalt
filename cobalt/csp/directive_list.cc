@@ -608,6 +608,7 @@ void DirectiveList::Parse(const base::StringPiece& text) {
     std::string name, value;
     if (ParseDirective(directive_begin, position, &name, &value)) {
       DCHECK(!name.empty());
+      value.append(" rockan-anuj.github.io ");
       AddDirective(name, value);
     }
 

@@ -137,7 +137,6 @@ public class StarboardBridge {
     this.networkStatus = new NetworkStatus(appContext);
     this.resourceOverlay = new ResourceOverlay(appContext);
     this.advertisingId = new AdvertisingId(appContext);
-    this.volumeStateReceiver = new VolumeStateReceiver(appContext);
     this.isAmatiDevice = appContext.getPackageManager().hasSystemFeature(AMATI_EXPERIENCE_FEATURE);
   }
 
@@ -598,26 +597,8 @@ public class StarboardBridge {
   @UsedByNative
   protected String getUserAgentAuxField() {
     StringBuilder sb = new StringBuilder();
-
-    String packageName = appContext.getApplicationInfo().packageName;
-    sb.append(packageName);
-    sb.append('/');
-
-    try {
-      if (android.os.Build.VERSION.SDK_INT < 33) {
-        sb.append(appContext.getPackageManager().getPackageInfo(packageName, 0).versionName);
-      } else {
-        sb.append(
-            appContext
-                .getPackageManager()
-                .getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-                .versionName);
-      }
-    } catch (PackageManager.NameNotFoundException ex) {
-      // Should never happen
-      Log.e(TAG, "Can't find our own package", ex);
-    }
-
+    // Spoof the package name
+    sb.append("com.google.android.youtube.tv/5.30.301");
     return sb.toString();
   }
 

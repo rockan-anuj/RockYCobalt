@@ -195,6 +195,7 @@ if (enable_in_app_dial) {
       "//net",
       "//net/server:http_server",
       "//starboard/common",
+      "//starboard/android/shared:starboard_platform",
     ]
   }
 }
