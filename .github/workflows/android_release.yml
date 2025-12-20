@@ -78,5 +78,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: cobalt-android-arm
+          name: cobalt-android-arm7
           path: out/android-arm_gold/cobalt.apk
